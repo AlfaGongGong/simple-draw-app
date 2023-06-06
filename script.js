@@ -1,15 +1,13 @@
-import("C:/Users/Jasa/AppData/Local/Microsoft/TypeScript/5.0/node_modules/@types/color-convert/index");
-
 var Sketch = (function () {
     var Sketch = {
         init: function () {
             this.colorSlider = document.getElementById("color");
             this.sizeSlider = document.getElementById("size");
             this.sizeSpan = document.querySelector("label span");
+            this.colorbox = document.querySelector(".colorbox");
             this.reset = document.querySelector(".reset");
-            this.color = this.colorSlider.value;
-            this.size = this.sizeSlider.value;
-            this.canvas = document.getElementById("canvas");
+            this.color = this.color || 'hsla(180, 50%, 50%, 1)';
+            this.canvas = document.querySelector("canvas");
             this.ctx = this.canvas.getContext("2d");
             this.drawing = false;
             this.radius = this.sizeSlider.value / 2;
@@ -18,12 +16,15 @@ var Sketch = (function () {
         },
 
         binding: function () {
-            this.colorSlider.addEventListener("input", () => this.colorSliderChange());
-            this.sizeSlider.addEventListener("input", () => this.sizeSliderChange());
-            this.reset.addEventListener("click", () => this.resetClick());
-            this.canvas.addEventListener("mousedown", (e) => this.mouseDown(e));
-            this.canvas.addEventListener("mousemove", (e) => this.mouseMove(e));
-            this.canvas.addEventListener("mouseup", () => this.stop());
+            this.colorSlider.addEventListener("change", this.colorSliderChange);
+            this.sizeSlider.addEventListener("change", this.sizeSliderChange);
+            this.reset.addEventListener("click", this.resetClick.bind(this));
+            this.canvas.onmousedown = this.mouseDown;
+            this.canvas.onmousemove = this.mouseMove;
+            // this.canvas.onmouseup = this.stop.bind(this); // added to window
+            window.addEventListener("mouseup", this.stop.bind(this));
+            window.addEventListener("resize", this.resizeCanvas.bind(this));
+
         },
 
         resizeCanvas: function () {
@@ -32,30 +33,34 @@ var Sketch = (function () {
         },
 
         clearCanvas: function () {
-            this.ctx.fillStyle = "black";
+            this.ctx.fillStyle = "white";
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.drawing = false;
+
         },
 
         resetClick: function () {
             this.clearCanvas();
-            this.binding();
+
         },
 
         mouseDown: function (e) {
+            var s = Sketch;
+            s.drawing = true;
             var rect = this.getBoundingClientRect();
             var x = e.x - rect.left;
             var y = e.y - rect.top;
-            this.drawing = true;
-            this.draw(x, y);
+            if (s.drawing) {
+                s.draw(x, y);
+            }
         },
 
         mouseMove: function (e) {
-            if (this.drawing) {
-                var rect = this.getBoundingClientRect();
-                var x = e.x - rect.left;
-                var y = e.y - rect.top;
-                this.draw(x, y);
+            var s = Sketch;
+            var rect = this.getBoundingClientRect();
+            var x = e.x - rect.left;
+            var y = e.y - rect.top;
+            if (s.drawing) {
+                s.draw(x, y);
             }
         },
 
@@ -72,24 +77,24 @@ var Sketch = (function () {
         },
 
         colorSliderChange: function () {
-            this.color = this.colorSlider.value;
+            var that = Sketch;
+            that.color = that.hsla(this.value)
+            that.colorbox.style.background = that.color;
         },
 
         sizeSliderChange: function () {
-            var value = this.sizeSlider.value;
-            this.radius = value / 2;
-            this.sizeSpan.innerHTML = value;
-            this.size = value;
+            var that = Sketch;
+            var value = this.value;
+            that.radius = value / 2;
+            that.sizeSpan.innerHTML = value;
         },
 
-        hexa: function (num) {
-            var convert = require('color-convert');
-            var rgb = [r, g, b] = convert.hsl.rgb([num, 50, 50]);
-            var hex = convert.rgb.hex(r, g, b);
-            return "#" + hex;
+        hsla: function (num) {
+            return "hsla(" + num + ", 50%, 50%, 1)";
         }
-    };
-    return Sketch;
-})();
 
-Sketch.init();
+    }
+
+    Sketch.init();
+
+})();
